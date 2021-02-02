@@ -9,20 +9,20 @@ import javax.persistence.Query;
 import java.util.List;
 
 @Repository
-public class UserDAOImpl implements UserDAO{
+public class UserDAOImpl implements UserDAO {
 
     @PersistenceContext
     protected EntityManager entityManager;
 
     @Override
     public List<User> getUsers() {
-        Query query = entityManager.createQuery("select с from User с ");
+        Query query = entityManager.createQuery("select u from User u ");
         return query.getResultList();
     }
 
     @Override
     public void saveUser(User theUser) {
-
+        entityManager.merge(theUser);
     }
 
     @Override

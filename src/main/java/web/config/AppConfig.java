@@ -32,147 +32,118 @@ import java.util.logging.Logger;
 @EnableWebMvc
 @EnableTransactionManagement
 @ComponentScan("web")
-@PropertySource({ "classpath:persistence-mysql.properties" })
+@PropertySource({"classpath:persistence-mysql.properties"})
 public class AppConfig implements WebMvcConfigurer {
 
-	private final ApplicationContext applicationContext;
+    private final ApplicationContext applicationContext;
 
-	@Autowired
-	private Environment env;
-	
-	private Logger logger = Logger.getLogger(getClass().getName());
+    @Autowired
+    private Environment env;
 
-	public AppConfig(ApplicationContext applicationContext) {
-		this.applicationContext = applicationContext;
-	}
+    private Logger logger = Logger.getLogger(getClass().getName());
 
-	// define a bean for ViewResolver
-
-	@Bean
-	public SpringResourceTemplateResolver templateResolver() {
-		SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
-		templateResolver.setApplicationContext(applicationContext);
-		templateResolver.setPrefix("/WEB-INF/view/");
-		templateResolver.setSuffix(".html");
-		return templateResolver;
-	}
-
-	@Bean
-	public SpringTemplateEngine templateEngine() {
-		SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-		templateEngine.setTemplateResolver(templateResolver());
-		templateEngine.setEnableSpringELCompiler(true);
-		return templateEngine;
-	}
-
-
-	@Override
-	public void configureViewResolvers(ViewResolverRegistry registry) {
-		ThymeleafViewResolver resolver = new ThymeleafViewResolver();
-		resolver.setTemplateEngine(templateEngine());
-		registry.viewResolver(resolver);
-	}
-
-	
-	@Bean
-	public DataSource myDataSource() {
-		
-		// create connection pool
-		ComboPooledDataSource myDataSource = new ComboPooledDataSource();
-
-		// set the jdbc driver
-		try {
-			myDataSource.setDriverClass(env.getProperty("jdbc.driver"));		
-		}
-		catch (PropertyVetoException exc) {
-			throw new RuntimeException(exc);
-		}
-		
-		// for sanity's sake, let's log url and user ... just to make sure we are reading the data
-		logger.info("jdbc.url=" + env.getProperty("jdbc.url"));
-		logger.info("jdbc.user=" + env.getProperty("jdbc.user"));
-		
-		// set database connection props
-		myDataSource.setJdbcUrl(env.getProperty("jdbc.url"));
-		myDataSource.setUser(env.getProperty("jdbc.user"));
-		myDataSource.setPassword(env.getProperty("jdbc.password"));
-		
-		// set connection pool props
-		myDataSource.setInitialPoolSize(getIntProperty("connection.pool.initialPoolSize"));
-		myDataSource.setMinPoolSize(getIntProperty("connection.pool.minPoolSize"));
-		myDataSource.setMaxPoolSize(getIntProperty("connection.pool.maxPoolSize"));		
-		myDataSource.setMaxIdleTime(getIntProperty("connection.pool.maxIdleTime"));
-
-		return myDataSource;
-	}
-	
-	private Properties getHibernateProperties() {
-
-		// set hibernate properties
-		Properties props = new Properties();
-
-		props.setProperty("hibernate.dialect", env.getProperty("hibernate.dialect"));
-		props.setProperty("hibernate.show_sql", env.getProperty("hibernate.show_sql"));
-		props.setProperty("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
-		return props;				
-	}
-
-	
-	// need a helper method 
-	// read environment property and convert to int
-	
-	private int getIntProperty(String propName) {
-		
-		String propVal = env.getProperty(propName);
-		
-		// now convert to int
-		int intPropVal = Integer.parseInt(propVal);
-		
-		return intPropVal;
-	}	
-	
-
-
-	@Bean
-	public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
-		LocalContainerEntityManagerFactoryBean em
-				= new LocalContainerEntityManagerFactoryBean();
-		em.setDataSource(myDataSource());
-		em.setPackagesToScan(env.getProperty("hibernate.packagesToScan"));
-
-		JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-		em.setJpaVendorAdapter(vendorAdapter);
-		em.setJpaProperties(getHibernateProperties());
-
-		return em;
-	}
-	
-
-
-	@Bean
-	public PlatformTransactionManager transactionManager() {
-		JpaTransactionManager transactionManager = new JpaTransactionManager();
-		transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
-
-		return transactionManager;
-	}
-
-
-
-	@Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry
-          .addResourceHandler("/resources/**")
-          .addResourceLocations("/resources/");
-
+    public AppConfig(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 
-	@Bean
-	public PersistenceExceptionTranslationPostProcessor exceptionTranslation(){
-		return new PersistenceExceptionTranslationPostProcessor();
-	}
+    @Bean
+    public SpringResourceTemplateResolver templateResolver() {
+        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+        templateResolver.setApplicationContext(applicationContext);
+        templateResolver.setPrefix("/WEB-INF/view/");
+        templateResolver.setSuffix(".html");
+        return templateResolver;
+    }
+
+    @Bean
+    public SpringTemplateEngine templateEngine() {
+        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+        templateEngine.setTemplateResolver(templateResolver());
+        templateEngine.setEnableSpringELCompiler(true);
+        return templateEngine;
+    }
 
 
+    @Override
+    public void configureViewResolvers(ViewResolverRegistry registry) {
+        ThymeleafViewResolver resolver = new ThymeleafViewResolver();
+        resolver.setTemplateEngine(templateEngine());
+        registry.viewResolver(resolver);
+    }
+
+
+    @Bean
+    public DataSource myDataSource() {
+
+        ComboPooledDataSource myDataSource = new ComboPooledDataSource();
+
+        try {
+            myDataSource.setDriverClass(env.getProperty("jdbc.driver"));
+        } catch (PropertyVetoException exc) {
+            throw new RuntimeException(exc);
+        }
+
+        logger.info("jdbc.url=" + env.getProperty("jdbc.url"));
+        logger.info("jdbc.user=" + env.getProperty("jdbc.user"));
+
+        myDataSource.setJdbcUrl(env.getProperty("jdbc.url"));
+        myDataSource.setUser(env.getProperty("jdbc.user"));
+        myDataSource.setPassword(env.getProperty("jdbc.password"));
+
+        myDataSource.setInitialPoolSize(getIntProperty("connection.pool.initialPoolSize"));
+        myDataSource.setMinPoolSize(getIntProperty("connection.pool.minPoolSize"));
+        myDataSource.setMaxPoolSize(getIntProperty("connection.pool.maxPoolSize"));
+        myDataSource.setMaxIdleTime(getIntProperty("connection.pool.maxIdleTime"));
+
+        return myDataSource;
+    }
+
+    private Properties getHibernateProperties() {
+        Properties props = new Properties();
+        props.setProperty("hibernate.dialect", env.getProperty("hibernate.dialect"));
+        props.setProperty("hibernate.show_sql", env.getProperty("hibernate.show_sql"));
+        props.setProperty("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
+        return props;
+    }
+
+    private int getIntProperty(String propName) {
+        String propVal = env.getProperty(propName);
+        return Integer.parseInt(propVal);
+    }
+
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+        LocalContainerEntityManagerFactoryBean em
+                = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(myDataSource());
+        em.setPackagesToScan(env.getProperty("hibernate.packagesToScan"));
+        JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        em.setJpaVendorAdapter(vendorAdapter);
+        em.setJpaProperties(getHibernateProperties());
+        return em;
+    }
+
+
+    @Bean
+    public PlatformTransactionManager transactionManager() {
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
+        return transactionManager;
+    }
+
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry
+                .addResourceHandler("/resources/**")
+                .addResourceLocations("/resources/");
+    }
+
+    @Bean
+    public PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
+        return new PersistenceExceptionTranslationPostProcessor();
+    }
 }
 
 
